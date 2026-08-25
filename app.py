@@ -1,8 +1,14 @@
 from datetime import datetime, timedelta
 import pandas as pd
 import streamlit as st
+from streamlit_gsheets import GSheetsConnection
 
-EXCEL_FILE = "control_circuitos.xlsx"
+# Crear conexión con Google Sheets
+conn = st.connection("gsheets", type=GSheetsConnection)
+
+# Leer datos de la hoja en tiempo real (ttl=0 para que no guarde memoria vieja)
+df = conn.read(worksheet="Sheet1", ttl=0)
+df.fillna("", inplace=True)
 
 # Listas oficiales de Plazas
 PLAZAS = ["MÉRIDA", "CANCÚN", "VILLAHERMOSA", "VERACRUZ", "TOLUCA", "TUXTLA"]
@@ -16,31 +22,7 @@ OPERADORES_OFICIALES = [
 ]
 UNIDADES_ECONOMICAS = ["535", "536", "102", "104", "205"]
 
-
-def init_excel():
-  try:
-    df = pd.read_excel(EXCEL_FILE)
-  except FileNotFoundError:
-    columns = [
-        "ORIGEN",
-        "FECHA SALIDA",
-        "HORA SALIDA",
-        "CIRCUITO",
-        "OPERADOR",
-        "NO. ECO",
-        "FOLIO",
-        "DESTINO",
-        "FECHA LLEGADA DESTINO FINAL",
-        "HORA LLEGADA DESTINO FINAL",
-        "COMENTARIOS/OBSERVACIONES",
-    ]
-    df = pd.DataFrame(columns=columns)
-    df.to_excel(EXCEL_FILE, index=False)
-
-
-init_excel()
-
-st.title("Control de Circuitos entre Plazas")
+st.title("Control de Circuitos entre Plazas (En Línea)")
 
 plaza_actual = st.selectbox("Selecciona tu Plaza Actual:", PLAZAS)
 
@@ -72,9 +54,7 @@ def obtener_tiempo_mexico():
   return ahora_mexico.strftime("%d/%m/%Y"), ahora_mexico.strftime("%H:%M:%S")
 
 
-# ---------------------------------------------------------
 # 1. REGISTRAR SALIDA
-# ---------------------------------------------------------
 if menu == "Registrar Salida":
   st.header(f"Registrar Salida desde: {plaza_actual}")
 
@@ -100,13 +80,10 @@ if menu == "Registrar Salida":
       if not folio:
         st.error("Por favor completa el folio.")
       else:
-        df = pd.read_excel(EXCEL_FILE, dtype=str)
-        df.fillna("", inplace=True)
-
         if not df[df["FOLIO"].astype(str) == str(folio)].empty:
           st.error("¡El folio ya se encuentra registrado!")
         else:
-          nueva_fila = {
+          nueva_fila = pd.DataFrame([{
               "ORIGEN": plaza_actual,
               "FECHA SALIDA": fecha_salida,
               "HORA SALIDA": hora_salida,
@@ -118,22 +95,18 @@ if menu == "Registrar Salida":
               "FECHA LLEGADA DESTINO FINAL": "",
               "HORA LLEGADA DESTINO FINAL": "",
               "COMENTARIOS/OBSERVACIONES": "",
-          }
-          df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
-          df.to_excel(EXCEL_FILE, index=False)
+          }])
+          df_updated = pd.concat([df, nueva_fila], ignore_index=True)
+          conn.update(worksheet="Sheet1", data=df_updated)
           st.success(
               f"¡Salida del folio {folio} registrada correctamente hacia"
               f" {destino}!"
           )
           st.rerun()
 
-# ---------------------------------------------------------
 # 2. REGISTRAR LLEGADA (PENDIENTES)
-# ---------------------------------------------------------
 elif menu == "Registrar Llegada":
   st.header(f"Registrar Llegada en: {plaza_actual}")
-  df = pd.read_excel(EXCEL_FILE, dtype=str)
-  df.fillna("", inplace=True)
 
   pendientes = df[
       (df["DESTINO"] == plaza_actual)
@@ -176,15 +149,13 @@ elif menu == "Registrar Llegada":
         df.loc[idx, "HORA LLEGADA DESTINO FINAL"] = str(hora_llegada)
         df.loc[idx, "COMENTARIOS/OBSERVACIONES"] = str(observaciones)
 
-        df.to_excel(EXCEL_FILE, index=False)
+        conn.update(worksheet="Sheet1", data=df)
         st.success(
             f"¡Llegada del folio {folio_seleccionado} registrada con éxito!"
         )
         st.rerun()
 
-# ---------------------------------------------------------
 # 3. CAPTURAR LLEGADA SIN SALIDA PREVIA
-# ---------------------------------------------------------
 elif menu == "Llegada sin Salida":
   st.header(f"Registro Directo (Sin Salida Previa) en: {plaza_actual}")
 
@@ -215,10 +186,7 @@ elif menu == "Llegada sin Salida":
     submitted_directo = st.form_submit_button("Guardar Registro Completo")
 
     if submitted_directo:
-      df = pd.read_excel(EXCEL_FILE, dtype=str)
-      df.fillna("", inplace=True)
-
-      nueva_fila = {
+      nueva_fila = pd.DataFrame([{
           "ORIGEN": origen,
           "FECHA SALIDA": f_salida,
           "HORA SALIDA": h_salida,
@@ -230,21 +198,17 @@ elif menu == "Llegada sin Salida":
           "FECHA LLEGADA DESTINO FINAL": f_ahora,
           "HORA LLEGADA DESTINO FINAL": h_ahora,
           "COMENTARIOS/OBSERVACIONES": observaciones,
-      }
-      df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
-      df.to_excel(EXCEL_FILE, index=False)
-      st.success("¡Registro completo guardado en una sola línea en el Excel!")
+      }])
+      df_updated = pd.concat([df, nueva_fila], ignore_index=True)
+      conn.update(worksheet="Sheet1", data=df_updated)
+      st.success("¡Registro completo guardado en Google Sheets!")
       st.rerun()
 
-# ---------------------------------------------------------
 # 4. CAPTURAR SALIDA CON LLEGADA YA REGISTRADA
-# ---------------------------------------------------------
 elif menu == "Salida con Llegada previa":
   st.header(
       f"Completar Salida (Destino ya registró llegada) - Plaza: {plaza_actual}"
   )
-  df = pd.read_excel(EXCEL_FILE, dtype=str)
-  df.fillna("", inplace=True)
 
   pendientes_salida = df[
       (df["ORIGEN"] == plaza_actual)
@@ -283,18 +247,13 @@ elif menu == "Salida con Llegada previa":
 
       if submitted_completo:
         idx = df[df["FOLIO"].astype(str) == folio_sel].index[0]
-        # Solo actualizamos la fecha y hora de salida, respetando operador y económico que ya puso el destino
         df.loc[idx, "FECHA SALIDA"] = f_salida_manual
         df.loc[idx, "HORA SALIDA"] = h_salida_manual
 
-        df.to_excel(EXCEL_FILE, index=False)
+        conn.update(worksheet="Sheet1", data=df)
         st.success(f"¡Salida del folio {folio_sel} completada con éxito!")
         st.rerun()
 
-# Visualizador rápido
-with st.expander("Ver base de datos actual en Excel"):
-  try:
-    df_view = pd.read_excel(EXCEL_FILE)
-    st.dataframe(df_view)
-  except:
-    st.write("Aún no hay datos.")
+# Visualizador rápido de la base de datos completa en Google Sheets
+with st.expander("Ver base de datos actual en Google Sheets"):
+  st.dataframe(df)
