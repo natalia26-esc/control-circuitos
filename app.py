@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import streamlit as st
 
@@ -6,7 +6,13 @@ EXCEL_FILE = "control_circuitos.xlsx"
 
 # Listas oficiales
 PLAZAS = ["MÉRIDA", "CANCÚN", "VILLAHERMOSA", "VERACRUZ", "TOLUCA", "TUXTLA"]
-OPERADORES = ["EBER SOLIS", "JUAN PEREZ", "CARLOS GOMEZ", "JOSÉ RAMÍREZ", "MANUEL LÓPEZ"]
+OPERADORES = [
+    "EBER SOLIS",
+    "JUAN PEREZ",
+    "CARLOS GOMEZ",
+    "JOSÉ RAMÍREZ",
+    "MANUEL LÓPEZ",
+]
 
 
 def init_excel():
@@ -39,11 +45,10 @@ plaza_actual = st.selectbox("Selecciona tu Plaza Actual:", PLAZAS)
 
 st.markdown("---")
 
-# MENÚ FIJO CON BOTONES (En lugar de desplegable lateral)
+# MENÚ FIJO CON BOTONES
 st.markdown("### Menú de Opciones")
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 
-# Usamos session_state para mantener la pestaña seleccionada
 if "menu_activo" not in st.session_state:
   st.session_state.menu_activo = "Registrar Salida"
 
@@ -60,6 +65,14 @@ menu = st.session_state.menu_activo
 st.markdown(f"**Modo actual:** {menu}")
 st.markdown("---")
 
+
+# Función para obtener la hora correcta de México (-6 horas respecto al servidor UTC de la nube)
+def obtener_tiempo_mexico():
+  # Ajusta -6 horas (hora central de México)
+  ahora_mexico = datetime.utcnow() - timedelta(hours=6)
+  return ahora_mexico.strftime("%d/%m/%Y"), ahora_mexico.strftime("%H:%M:%S")
+
+
 # ---------------------------------------------------------
 # 1. REGISTRAR SALIDA
 # ---------------------------------------------------------
@@ -67,18 +80,14 @@ if menu == "Registrar Salida":
   st.header(f"Registrar Salida desde: {plaza_actual}")
 
   with st.form("form_salida"):
-    now = datetime.now()
-    fecha_salida = now.strftime("%d/%m/%Y")
-    hora_salida = now.strftime("%H:%M:%S")
+    fecha_salida, hora_salida = obtener_tiempo_mexico()
 
     st.write(f"**Fecha de Salida (Automática):** {fecha_salida}")
     st.write(f"**Hora de Salida (Automática):** {hora_salida}")
 
-    # Destinos posibles (excluyendo la propia plaza)
     destinos_posibles = [p for p in PLAZAS if p != plaza_actual]
     destino = st.selectbox("Plaza Destino", destinos_posibles)
 
-    # Circuito automático basado en Origen y Destino
     circuito = f"{plaza_actual[:3]}-{destino[:3]}".upper()
     st.info(f"Circuito generado automáticamente: **{circuito}**")
 
@@ -152,9 +161,7 @@ elif menu == "Registrar Llegada":
     st.write(f"- **Económico:** {circuito_info['NO. ECO']}")
 
     with st.form("form_llegada"):
-      now = datetime.now()
-      fecha_llegada = now.strftime("%d/%m/%Y")
-      hora_llegada = now.strftime("%H:%M:%S")
+      fecha_llegada, hora_llegada = obtener_tiempo_mexico()
 
       st.write(f"**Fecha de Llegada (Automática):** {fecha_llegada}")
       st.write(f"**Hora de Llegada (Automática):** {hora_llegada}")
@@ -186,13 +193,8 @@ elif menu == "Llegada sin Salida":
     origen = st.selectbox(
         "Plaza de Origen", [p for p in PLAZAS if p != plaza_actual]
     )
-    now = datetime.now()
-    
-    # Automáticas para salida y llegada en este módulo
-    f_salida = now.strftime("%d/%m/%Y")
-    h_salida = now.strftime("%H:%M:%S")
-    f_llegada = now.strftime("%d/%m/%Y")
-    h_llegada = now.strftime("%H:%M:%S")
+    f_salida, h_salida = obtener_tiempo_mexico()
+    f_llegada, h_llegada = obtener_tiempo_mexico()
 
     st.write(f"**Fecha/Hora Salida (Automática):** {f_salida} {h_salida}")
     st.write(f"**Fecha/Hora Llegada (Automática):** {f_llegada} {h_llegada}")
@@ -235,24 +237,24 @@ elif menu == "Llegada sin Salida":
 # 4. CAPTURAR SALIDA CON LLEGADA YA REGISTRADA
 # ---------------------------------------------------------
 elif menu == "Salida con Llegada previa":
-  st.header(f"Completar Salida (Destino ya registró llegada) - Plaza: {plaza_actual}")
+  st.header(
+      f"Completar Salida (Destino ya registró llegada) - Plaza: {plaza_actual}"
+  )
   df = pd.read_excel(EXCEL_FILE, dtype=str)
   df.fillna("", inplace=True)
 
-  # Buscar registros donde el ORIGEN sea la plaza actual pero la FECHA SALIDA esté vacía o no registrada
-  # (O registros creados inicialmente por destino donde origen deba complementar)
   pendientes_salida = df[
       (df["ORIGEN"] == plaza_actual)
-      & (
-          df["FECHA SALIDA"].isna()
-          | (df["FECHA SALIDA"] == "")
-      )
+      & (df["FECHA SALIDA"].isna() | (df["FECHA SALIDA"] == ""))
   ]
 
   if pendientes_salida.empty:
     st.info("No hay salidas pendientes de completar para tu plaza.")
   else:
-    st.write("Selecciona el circuito registrado por el destino para complementar tu salida:")
+    st.write(
+        "Selecciona el circuito registrado por el destino para complementar"
+        " tu salida:"
+    )
     folios_disp = pendientes_salida["FOLIO"].astype(str).tolist()
     folio_sel = st.selectbox("Folio con Llegada Previa", folios_disp)
 
@@ -261,12 +263,13 @@ elif menu == "Salida con Llegada previa":
     ].iloc[0]
     st.markdown("### Datos registrados por el Destino:")
     st.write(f"- **Destino:** {info_reg['DESTINO']}")
-    st.write(f"- **Llegada registrada:** {info_reg['FECHA LLEGADA DESTINO FINAL']} a las {info_reg['HORA LLEGADA DESTINO FINAL']}")
+    st.write(
+        f"- **Llegada registrada:** {info_reg['FECHA LLEGADA DESTINO FINAL']} a"
+        f" las {info_reg['HORA LLEGADA DESTINO FINAL']}"
+    )
 
     with st.form("form_completar_salida"):
-      now = datetime.now()
-      f_salida_auto = now.strftime("%d/%m/%Y")
-      h_salida_auto = now.strftime("%H:%M:%S")
+      f_salida_auto, h_salida_auto = obtener_tiempo_mexico()
 
       st.write(f"**Fecha de Salida (Automática):** {f_salida_auto}")
       st.write(f"**Hora de Salida (Automática):** {h_salida_auto}")
