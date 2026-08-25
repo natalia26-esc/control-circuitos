@@ -4,15 +4,17 @@ import streamlit as st
 
 EXCEL_FILE = "control_circuitos.xlsx"
 
-# Listas oficiales
+# Listas oficiales de Plazas
 PLAZAS = ["MÉRIDA", "CANCÚN", "VILLAHERMOSA", "VERACRUZ", "TOLUCA", "TUXTLA"]
-OPERADORES = [
+
+OPERADORES_OFICIALES = [
     "EBER SOLIS",
     "JUAN PEREZ",
     "CARLOS GOMEZ",
     "JOSÉ RAMÍREZ",
     "MANUEL LÓPEZ",
 ]
+UNIDADES_ECONOMICAS = ["535", "536", "102", "104", "205"]
 
 
 def init_excel():
@@ -40,7 +42,6 @@ init_excel()
 
 st.title("Control de Circuitos entre Plazas")
 
-# Selección de Plaza actual fija
 plaza_actual = st.selectbox("Selecciona tu Plaza Actual:", PLAZAS)
 
 st.markdown("---")
@@ -66,9 +67,7 @@ st.markdown(f"**Modo actual:** {menu}")
 st.markdown("---")
 
 
-# Función para obtener la hora correcta de México (-6 horas respecto al servidor UTC de la nube)
 def obtener_tiempo_mexico():
-  # Ajusta -6 horas (hora central de México)
   ahora_mexico = datetime.utcnow() - timedelta(hours=6)
   return ahora_mexico.strftime("%d/%m/%Y"), ahora_mexico.strftime("%H:%M:%S")
 
@@ -91,15 +90,15 @@ if menu == "Registrar Salida":
     circuito = f"{plaza_actual[:3]}-{destino[:3]}".upper()
     st.info(f"Circuito generado automáticamente: **{circuito}**")
 
-    operador = st.selectbox("Operador", OPERADORES)
-    no_eco = st.text_input("No. Económico (Ej: 535)")
+    operador = st.selectbox("Operador", OPERADORES_OFICIALES)
+    no_eco = st.selectbox("No. Económico", UNIDADES_ECONOMICAS)
     folio = st.text_input("Folio del Circuito (Ej: DQ00032584)")
 
     submitted = st.form_submit_button("Guardar Salida")
 
     if submitted:
-      if not folio or not no_eco:
-        st.error("Por favor completa el folio y el número económico.")
+      if not folio:
+        st.error("Por favor completa el folio.")
       else:
         df = pd.read_excel(EXCEL_FILE, dtype=str)
         df.fillna("", inplace=True)
@@ -193,17 +192,21 @@ elif menu == "Llegada sin Salida":
     origen = st.selectbox(
         "Plaza de Origen", [p for p in PLAZAS if p != plaza_actual]
     )
-    f_salida, h_salida = obtener_tiempo_mexico()
-    f_llegada, h_llegada = obtener_tiempo_mexico()
 
-    st.write(f"**Fecha/Hora Salida (Automática):** {f_salida} {h_salida}")
-    st.write(f"**Fecha/Hora Llegada (Automática):** {f_llegada} {h_llegada}")
+    f_ahora, h_ahora = obtener_tiempo_mexico()
+    st.markdown("#### Datos de Salida (Captura Manual)")
+    f_salida = st.text_input("Fecha Salida (DD/MM/AAAA)", value=f_ahora)
+    h_salida = st.text_input("Hora Salida (HH:MM:SS)", value=h_ahora)
+
+    st.markdown("---")
+    st.write(f"**Fecha de Llegada (Automática):** {f_ahora}")
+    st.write(f"**Hora de Llegada (Automática):** {h_ahora}")
 
     circuito = f"{origen[:3]}-{plaza_actual[:3]}".upper()
     st.info(f"Circuito generado: **{circuito}**")
 
-    operador = st.selectbox("Operador", OPERADORES)
-    no_eco = st.text_input("No. Económico")
+    operador = st.selectbox("Operador", OPERADORES_OFICIALES)
+    no_eco = st.selectbox("No. Económico", UNIDADES_ECONOMICAS)
     folio = st.text_input("Folio del Circuito")
     observaciones = st.text_area(
         "Comentarios / Observaciones", value="Sin Incidencias"
@@ -224,8 +227,8 @@ elif menu == "Llegada sin Salida":
           "NO. ECO": str(no_eco),
           "FOLIO": str(folio),
           "DESTINO": plaza_actual,
-          "FECHA LLEGADA DESTINO FINAL": f_llegada,
-          "HORA LLEGADA DESTINO FINAL": h_llegada,
+          "FECHA LLEGADA DESTINO FINAL": f_ahora,
+          "HORA LLEGADA DESTINO FINAL": h_ahora,
           "COMENTARIOS/OBSERVACIONES": observaciones,
       }
       df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
@@ -261,30 +264,28 @@ elif menu == "Salida con Llegada previa":
     info_reg = pendientes_salida[
         pendientes_salida["FOLIO"].astype(str) == folio_sel
     ].iloc[0]
-    st.markdown("### Datos registrados por el Destino:")
+    st.markdown("### Datos ya registrados por el Destino:")
     st.write(f"- **Destino:** {info_reg['DESTINO']}")
+    st.write(f"- **Operador (Capturado por Destino):** {info_reg['OPERADOR']}")
+    st.write(f"- **Económico (Capturado por Destino):** {info_reg['NO. ECO']}")
     st.write(
         f"- **Llegada registrada:** {info_reg['FECHA LLEGADA DESTINO FINAL']} a"
         f" las {info_reg['HORA LLEGADA DESTINO FINAL']}"
     )
 
     with st.form("form_completar_salida"):
-      f_salida_auto, h_salida_auto = obtener_tiempo_mexico()
-
-      st.write(f"**Fecha de Salida (Automática):** {f_salida_auto}")
-      st.write(f"**Hora de Salida (Automática):** {h_salida_auto}")
-
-      operador = st.selectbox("Operador", OPERADORES)
-      no_eco = st.text_input("No. Económico")
+      f_hoy, h_ahora = obtener_tiempo_mexico()
+      st.markdown("#### Ingresa únicamente la Fecha y Hora de tu Salida:")
+      f_salida_manual = st.text_input("Fecha de Salida (DD/MM/AAAA)", value=f_hoy)
+      h_salida_manual = st.text_input("Hora de Salida (HH:MM:SS)", value=h_ahora)
 
       submitted_completo = st.form_submit_button("Guardar Salida")
 
       if submitted_completo:
         idx = df[df["FOLIO"].astype(str) == folio_sel].index[0]
-        df.loc[idx, "FECHA SALIDA"] = f_salida_auto
-        df.loc[idx, "HORA SALIDA"] = h_salida_auto
-        df.loc[idx, "OPERADOR"] = operador
-        df.loc[idx, "NO. ECO"] = str(no_eco)
+        # Solo actualizamos la fecha y hora de salida, respetando operador y económico que ya puso el destino
+        df.loc[idx, "FECHA SALIDA"] = f_salida_manual
+        df.loc[idx, "HORA SALIDA"] = h_salida_manual
 
         df.to_excel(EXCEL_FILE, index=False)
         st.success(f"¡Salida del folio {folio_sel} completada con éxito!")
