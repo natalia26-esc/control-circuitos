@@ -1,18 +1,58 @@
 from datetime import datetime, timedelta
+import os
+import json
+from google.oauth2.service_account import Credentials
+import gspread
 import pandas as pd
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 
-# Crear conexión con Google Sheets
-conn = st.connection("gsheets", type=GSheetsConnection)
+# Configuración de credenciales de Google Sheets usando los Secrets de Streamlit
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
 
-# Leer datos de la hoja en tiempo real (ttl=0 para que no guarde memoria vieja)
-df = conn.read(worksheet="Sheet1", ttl=0)
+
+@st.cache_resource
+def conectar_gsheets():
+  # Lee los secretos configurados en Streamlit Cloud
+  secrets_dict = dict(st.secrets["gcp_service_account"])
+  creds = Credentials.from_service_account_info(secrets_dict, scopes=scope)
+  client = gspread.authorize(creds)
+  # Abre la hoja por su URL configurada en los secrets
+  return client.open_by_url(st.secrets["sheet_url"])
+
+
+# Conectar y leer datos
+try:
+  sheet = conectar_gsheets().sheet1
+  data = sheet.get_all_records()
+  df = pd.DataFrame(data)
+  if df.empty:
+    columns = [
+        "ORIGEN",
+        "FECHA SALIDA",
+        "HORA SALIDA",
+        "CIRCUITO",
+        "OPERADOR",
+        "NO. ECO",
+        "FOLIO",
+        "DESTINO",
+        "FECHA LLEGADA DESTINO FINAL",
+        "HORA LLEGADA DESTINO FINAL",
+        "COMENTARIOS/OBSERVACIONES",
+    ]
+    df = pd.DataFrame(columns=columns)
+except Exception as e:
+  st.error(
+      f"Error al conectar con Google Sheets. Verifica tus Secrets: {e}"
+  )
+  df = pd.DataFrame()
+
 df.fillna("", inplace=True)
 
 # Listas oficiales de Plazas
 PLAZAS = ["MÉRIDA", "CANCÚN", "VILLAHERMOSA", "VERACRUZ", "TOLUCA", "TUXTLA"]
-
 OPERADORES_OFICIALES = [
     "EBER SOLIS",
     "JUAN PEREZ",
@@ -25,7 +65,6 @@ UNIDADES_ECONOMICAS = ["535", "536", "102", "104", "205"]
 st.title("Control de Circuitos entre Plazas (En Línea)")
 
 plaza_actual = st.selectbox("Selecciona tu Plaza Actual:", PLAZAS)
-
 st.markdown("---")
 
 # MENÚ FIJO CON BOTONES
@@ -54,13 +93,19 @@ def obtener_tiempo_mexico():
   return ahora_mexico.strftime("%d/%m/%Y"), ahora_mexico.strftime("%H:%M:%S")
 
 
+def guardar_en_gsheets(dataframe):
+  sheet.clear()
+  sheet.update(
+      [dataframe.columns.values.tolist()] + dataframe.values.tolist()
+  )
+
+
 # 1. REGISTRAR SALIDA
 if menu == "Registrar Salida":
   st.header(f"Registrar Salida desde: {plaza_actual}")
 
   with st.form("form_salida"):
     fecha_salida, hora_salida = obtener_tiempo_mexico()
-
     st.write(f"**Fecha de Salida (Automática):** {fecha_salida}")
     st.write(f"**Hora de Salida (Automática):** {hora_salida}")
 
@@ -80,10 +125,13 @@ if menu == "Registrar Salida":
       if not folio:
         st.error("Por favor completa el folio.")
       else:
-        if not df[df["FOLIO"].astype(str) == str(folio)].empty:
+        if (
+            not df.empty
+            and not df[df["FOLIO"].astype(str) == str(folio)].empty
+        ):
           st.error("¡El folio ya se encuentra registrado!")
         else:
-          nueva_fila = pd.DataFrame([{
+          nueva_fila = {
               "ORIGEN": plaza_actual,
               "FECHA SALIDA": fecha_salida,
               "HORA SALIDA": hora_salida,
@@ -95,9 +143,9 @@ if menu == "Registrar Salida":
               "FECHA LLEGADA DESTINO FINAL": "",
               "HORA LLEGADA DESTINO FINAL": "",
               "COMENTARIOS/OBSERVACIONES": "",
-          }])
-          df_updated = pd.concat([df, nueva_fila], ignore_index=True)
-          conn.update(worksheet="Sheet1", data=df_updated)
+          }
+          df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
+          guardar_en_gsheets(df)
           st.success(
               f"¡Salida del folio {folio} registrada correctamente hacia"
               f" {destino}!"
@@ -108,13 +156,16 @@ if menu == "Registrar Salida":
 elif menu == "Registrar Llegada":
   st.header(f"Registrar Llegada en: {plaza_actual}")
 
-  pendientes = df[
-      (df["DESTINO"] == plaza_actual)
-      & (
-          df["FECHA LLEGADA DESTINO FINAL"].isna()
-          | (df["FECHA LLEGADA DESTINO FINAL"] == "")
-      )
-  ]
+  if df.empty:
+    pendientes = pd.DataFrame()
+  else:
+    pendientes = df[
+        (df["DESTINO"] == plaza_actual)
+        & (
+            df["FECHA LLEGADA DESTINO FINAL"].isna()
+            | (df["FECHA LLEGADA DESTINO FINAL"] == "")
+        )
+    ]
 
   if pendientes.empty:
     st.info("No hay circuitos pendientes de llegada para tu plaza.")
@@ -134,7 +185,6 @@ elif menu == "Registrar Llegada":
 
     with st.form("form_llegada"):
       fecha_llegada, hora_llegada = obtener_tiempo_mexico()
-
       st.write(f"**Fecha de Llegada (Automática):** {fecha_llegada}")
       st.write(f"**Hora de Llegada (Automática):** {hora_llegada}")
       observaciones = st.text_area(
@@ -149,7 +199,7 @@ elif menu == "Registrar Llegada":
         df.loc[idx, "HORA LLEGADA DESTINO FINAL"] = str(hora_llegada)
         df.loc[idx, "COMENTARIOS/OBSERVACIONES"] = str(observaciones)
 
-        conn.update(worksheet="Sheet1", data=df)
+        guardar_en_gsheets(df)
         st.success(
             f"¡Llegada del folio {folio_seleccionado} registrada con éxito!"
         )
@@ -186,7 +236,7 @@ elif menu == "Llegada sin Salida":
     submitted_directo = st.form_submit_button("Guardar Registro Completo")
 
     if submitted_directo:
-      nueva_fila = pd.DataFrame([{
+      nueva_fila = {
           "ORIGEN": origen,
           "FECHA SALIDA": f_salida,
           "HORA SALIDA": h_salida,
@@ -198,9 +248,9 @@ elif menu == "Llegada sin Salida":
           "FECHA LLEGADA DESTINO FINAL": f_ahora,
           "HORA LLEGADA DESTINO FINAL": h_ahora,
           "COMENTARIOS/OBSERVACIONES": observaciones,
-      }])
-      df_updated = pd.concat([df, nueva_fila], ignore_index=True)
-      conn.update(worksheet="Sheet1", data=df_updated)
+      }
+      df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
+      guardar_en_gsheets(df)
       st.success("¡Registro completo guardado en Google Sheets!")
       st.rerun()
 
@@ -210,10 +260,13 @@ elif menu == "Salida con Llegada previa":
       f"Completar Salida (Destino ya registró llegada) - Plaza: {plaza_actual}"
   )
 
-  pendientes_salida = df[
-      (df["ORIGEN"] == plaza_actual)
-      & (df["FECHA SALIDA"].isna() | (df["FECHA SALIDA"] == ""))
-  ]
+  if df.empty:
+    pendientes_salida = pd.DataFrame()
+  else:
+    pendientes_salida = df[
+        (df["ORIGEN"] == plaza_actual)
+        & (df["FECHA SALIDA"].isna() | (df["FECHA SALIDA"] == ""))
+    ]
 
   if pendientes_salida.empty:
     st.info("No hay salidas pendientes de completar para tu plaza.")
@@ -250,7 +303,7 @@ elif menu == "Salida con Llegada previa":
         df.loc[idx, "FECHA SALIDA"] = f_salida_manual
         df.loc[idx, "HORA SALIDA"] = h_salida_manual
 
-        conn.update(worksheet="Sheet1", data=df)
+        guardar_en_gsheets(df)
         st.success(f"¡Salida del folio {folio_sel} completada con éxito!")
         st.rerun()
 
