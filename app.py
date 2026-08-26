@@ -434,9 +434,10 @@ elif menu == "Salida con Llegada previa":
 
       if submitted_completo:
         idx = df[df["FOLIO"].astype(str) == folio_sel].index[0]
-        # AQUÍ ESTABA EL CAMBIO CLAVE: Tomar las variables manuales en lugar de la hora actual del servidor
-        df.loc[idx, "FECHA SALIDA"] = f_salida_manual
-        df.loc[idx, "HORA SALIDA"] = h_salida_manual
+        df.loc[idx, "FECHA SALIDA"] = str(f_sal_salida_manual if 'f_sal_salida_manual' in locals() else f_salida_manual).strip() if 'f_salida_manual' in locals() else str(f_hoy).strip()
+        # Tomando exactamente el texto manual escrito por el usuario
+        df.loc[idx, "FECHA SALIDA"] = str(f_salida_manual).strip()
+        df.loc[idx, "HORA SALIDA"] = str(h_salida_manual).strip()
 
         guardar_en_gsheets(df)
         st.success(f"¡Salida del folio {folio_sel} completada con éxito!")
