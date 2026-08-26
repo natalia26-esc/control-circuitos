@@ -1,12 +1,10 @@
 from datetime import datetime, timedelta
-import os
-import json
-from google.oauth2.service_account import Credentials
-import gspread
 import pandas as pd
 import streamlit as st
+import gspread
+from google.oauth2.service_account import Credentials
 
-# Configuración de credenciales de Google Sheets usando los Secrets de Streamlit
+# Configuración de credenciales de Google Sheets
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
@@ -15,11 +13,9 @@ scope = [
 
 @st.cache_resource
 def conectar_gsheets():
-  # Lee los secretos configurados en Streamlit Cloud
   secrets_dict = dict(st.secrets["gcp_service_account"])
   creds = Credentials.from_service_account_info(secrets_dict, scopes=scope)
   client = gspread.authorize(creds)
-  # Abre la hoja por su URL configurada en los secrets
   return client.open_by_url(st.secrets["sheet_url"])
 
 
@@ -45,22 +41,147 @@ try:
     df = pd.DataFrame(columns=columns)
 except Exception as e:
   st.error(
-      f"Error al conectar con Google Sheets. Verifica tus Secrets: {e}"
+      f"Error al conectar con Google Sheets. Verifica tus Secrets o enlace: {e}"
   )
   df = pd.DataFrame()
 
 df.fillna("", inplace=True)
 
-# Listas oficiales de Plazas
+# Listas oficiales actualizadas
 PLAZAS = ["MÉRIDA", "CANCÚN", "VILLAHERMOSA", "VERACRUZ", "TOLUCA", "TUXTLA"]
+
 OPERADORES_OFICIALES = [
-    "EBER SOLIS",
-    "JUAN PEREZ",
-    "CARLOS GOMEZ",
-    "JOSÉ RAMÍREZ",
-    "MANUEL LÓPEZ",
+    "RAUL ADEMAR ESTRELLA POOT",
+    "JORGE IVAN BRITO COUOH",
+    "ALEXIS OMAR DZIB DZIB",
+    "RIGOBERTO DZIB OXTE",
+    "SANTIAGO GIOBERTI CRUZ CANO",
+    "CARLOS HERNANDEZ FERNANDEZ",
+    "FRANCISCO JOSE DOMINGUEZ GOMEZ",
+    "JORGE FABIAN ORTIZ LOPEZ",
+    "ALEJANDRO RAMIREZ HERRERA",
+    "JOSE ANGEL RAMIREZ JIMENEZ",
+    "DEINER EFRAIN FRIAS CARDONA",
+    "JOSE MANUEL SALAZAR SALCIDO",
+    "EDUARDO HERNANDEZ HERNANDEZ",
+    "LEON LUIS FERNANDO CENTENO DE",
+    "RODOLFO JULIAN MALDONADO AGUILAR",
+    "JUSTINO VARGAS GUILLEN",
+    "EBER JOSHUAN SOLIS ALVARADO",
+    "RODIBERTO VIDAL RIVERA",
+    "GASPAR SOLIS JAIME",
+    "ROGELIO GAEL MARTIN CIME",
+    "CRISTHIAN DANIEL DE JESUS EK BAUTISTA",
+    "GLEINER RAMSES RODRIGUEZ CHAN",
+    "IRVING ALEJANDRO CANTO CHAN",
+    "JAVIER EDUARDO FRANCO DZUL",
+    "JORGE BERNABE MOGUEL CORREA",
+    "ARMIN GUADALUPE DZUL ROSALES",
+    "OSCAR RENE GOMEZ PAT",
+    "HENRY HAFID CANUL AKE",
+    "JOSE SEBASTIAN KU KU",
+    "RICARDO EMMANUEL LIZAMA ALBORNOZ",
+    "LUIS ENRIQUE LORIA CAMPOS",
+    "JARED ARZATE BUENROSTRO",
+    "SERAFIN GONZALES VERTIZ",
+    "EDUARDO TZAB GONZALEZ",
+    "DAVID MORALES BAJE",
+    "ROMERO JESUS HORACIO DE LEON",
+    "RUBEN MAGAÑA RAMIREZ",
+    "RAFAEL SANCHEZ MARTINEZ",
+    "IVAN GARCIA SANCHEZ",
+    "JOSE ANTONIO PORCAYO ALMANZAR",
+    "RODRIGO MORALES BECERRIL",
+    "GELASIO ALBERTO GUADARRAMA GUADARRAMA",
+    "LUIS ENRIQUE CORZO CAMILO",
+    "AZIEL ACERO COELLO",
+    "JORGE VELAZQUEZ MEJIA",
+    "ALBERTO GABRIEL ORTIZ CHACON",
+    "OSCAR GONZALEZ HERNANDEZ",
+    "ANGEL DAVID RIVERA CORTES",
+    "FREDY VILLEGAS ALEJANDRO",
+    "LUIS EDUARDO MARTINEZ MENDEZ",
+    "OTILIO MENDEZ ESCOBAR",
+    "CARLOS ALFREDO DIAZ COYADO",
+    "LUIS ANGEL ARROYO PECH",
+    "ARMIN NEFTALI CARRILLO SANCHEZ",
+    "CARLOS IGNACIO CASTILLO CORDERO",
+    "ALEJANDRO GUADARRAMA GONZALEZ",
+    "NOE SALDIVAR FLORES",
+    "MOISES FERNANDEZ ESTRADA",
 ]
-UNIDADES_ECONOMICAS = ["535", "536", "102", "104", "205"]
+
+UNIDADES_ECONOMICAS = [
+    "541",
+    "447",
+    "527",
+    "479",
+    "506",
+    "542",
+    "371",
+    "486",
+    "435",
+    "534",
+    "539",
+    "504",
+    "538",
+    "522",
+    "480",
+    "441",
+    "524",
+    "535",
+    "230",
+    "540",
+    "419",
+    "440",
+    "453",
+    "536",
+    "378",
+    "1250",
+    "401",
+    "525",
+    "418",
+    "510",
+    "420",
+    "509",
+    "508",
+    "408",
+    "498",
+    "423",
+    "537",
+    "482",
+    "513",
+    "500",
+    "543",
+    "470",
+    "503",
+    "530",
+    "471",
+    "466",
+    "505",
+    "488",
+    "489",
+    "429",
+    "373",
+    "499",
+    "399",
+    "386",
+    "477",
+    "415",
+    "388",
+    "517",
+    "514",
+    "451",
+    "458",
+    "472",
+    "476",
+    "515",
+    "507",
+    "412",
+    "490",
+    "512",
+    "528",
+]
 
 st.title("Control de Circuitos entre Plazas (En Línea)")
 
@@ -215,11 +336,10 @@ elif menu == "Llegada sin Salida":
     )
 
     f_ahora, h_ahora = obtener_tiempo_mexico()
-    st.markdown("#### Datos de Salida (Captura Manual)")
-    f_salida = st.text_input("Fecha Salida (DD/MM/AAAA)", value=f_ahora)
-    h_salida = st.text_input("Hora Salida (HH:MM:SS)", value=h_ahora)
-
-    st.markdown("---")
+    st.markdown(
+        "*Nota: La fecha y hora de salida se dejarán vacías para que el origen"
+        " las complemente después.*"
+    )
     st.write(f"**Fecha de Llegada (Automática):** {f_ahora}")
     st.write(f"**Hora de Llegada (Automática):** {h_ahora}")
 
@@ -233,26 +353,32 @@ elif menu == "Llegada sin Salida":
         "Comentarios / Observaciones", value="Sin Incidencias"
     )
 
-    submitted_directo = st.form_submit_button("Guardar Registro Completo")
+    submitted_directo = st.form_submit_button("Guardar Registro de Llegada")
 
     if submitted_directo:
-      nueva_fila = {
-          "ORIGEN": origen,
-          "FECHA SALIDA": f_salida,
-          "HORA SALIDA": h_salida,
-          "CIRCUITO": circuito,
-          "OPERADOR": operador,
-          "NO. ECO": str(no_eco),
-          "FOLIO": str(folio),
-          "DESTINO": plaza_actual,
-          "FECHA LLEGADA DESTINO FINAL": f_ahora,
-          "HORA LLEGADA DESTINO FINAL": h_ahora,
-          "COMENTARIOS/OBSERVACIONES": observaciones,
-      }
-      df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
-      guardar_en_gsheets(df)
-      st.success("¡Registro completo guardado en Google Sheets!")
-      st.rerun()
+      if not folio:
+        st.error("Por favor completa el folio.")
+      else:
+        nueva_fila = {
+            "ORIGEN": origen,
+            "FECHA SALIDA": "",  # Vacío para que el origen lo complete luego
+            "HORA SALIDA": "",  # Vacío para que el origen lo complete luego
+            "CIRCUITO": circuito,
+            "OPERADOR": operador,
+            "NO. ECO": str(no_eco),
+            "FOLIO": str(folio),
+            "DESTINO": plaza_actual,
+            "FECHA LLEGADA DESTINO FINAL": f_ahora,
+            "HORA LLEGADA DESTINO FINAL": h_ahora,
+            "COMENTARIOS/OBSERVACIONES": observaciones,
+        }
+        df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
+        guardar_en_gsheets(df)
+        st.success(
+            "¡Llegada registrada con éxito! Quedará pendiente de complementar"
+            " la salida en la plaza de origen."
+        )
+        st.rerun()
 
 # 4. CAPTURAR SALIDA CON LLEGADA YA REGISTRADA
 elif menu == "Salida con Llegada previa":
@@ -269,7 +395,10 @@ elif menu == "Salida con Llegada previa":
     ]
 
   if pendientes_salida.empty:
-    st.info("No hay salidas pendientes de completar para tu plaza.")
+    st.info(
+        "No hay salidas pendientes de complementar para tu plaza (o el destino"
+        " aún no registra la llegada)."
+    )
   else:
     st.write(
         "Selecciona el circuito registrado por el destino para complementar"
@@ -307,6 +436,6 @@ elif menu == "Salida con Llegada previa":
         st.success(f"¡Salida del folio {folio_sel} completada con éxito!")
         st.rerun()
 
-# Visualizador rápido de la base de datos completa en Google Sheets
+# Visualizador rápido
 with st.expander("Ver base de datos actual en Google Sheets"):
   st.dataframe(df)
