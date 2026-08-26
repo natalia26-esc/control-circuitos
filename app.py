@@ -424,24 +424,23 @@ elif menu == "Salida con Llegada previa":
         f" las {info_reg['HORA LLEGADA DESTINO FINAL']}"
     )
 
-    with st.form("form_completar_salida"):
-      f_hoy, h_ahora = obtener_tiempo_mexico()
-      st.markdown("#### Ingresa únicamente la Fecha y Hora de tu Salida:")
-      f_salida_manual = st.text_input("Fecha de Salida (DD/MM/AAAA)", value=f_hoy)
-      h_salida_manual = st.text_input("Hora de Salida (HH:MM:SS)", value=h_ahora)
+    f_hoy, h_ahora = obtener_tiempo_mexico()
+    st.markdown("#### Ingresa únicamente la Fecha y Hora de tu Salida:")
 
-      submitted_completo = st.form_submit_button("Guardar Salida")
+    # Usamos campos de texto fuera del form para asegurar que lean exactamente el input manual
+    f_salida_manual = st.text_input("Fecha de Salida (DD/MM/AAAA)", value=f_hoy)
+    h_salida_manual = st.text_input(
+        "Hora de Salida (HH:MM:SS)", value=h_ahora, key="input_hora_salida"
+    )
 
-      if submitted_completo:
-        idx = df[df["FOLIO"].astype(str) == folio_sel].index[0]
-        df.loc[idx, "FECHA SALIDA"] = str(f_sal_salida_manual if 'f_sal_salida_manual' in locals() else f_salida_manual).strip() if 'f_salida_manual' in locals() else str(f_hoy).strip()
-        # Tomando exactamente el texto manual escrito por el usuario
-        df.loc[idx, "FECHA SALIDA"] = str(f_salida_manual).strip()
-        df.loc[idx, "HORA SALIDA"] = str(h_salida_manual).strip()
+    if st.button("Guardar Salida Completa"):
+      idx = df[df["FOLIO"].astype(str) == folio_sel].index[0]
+      df.loc[idx, "FECHA SALIDA"] = str(f_salida_manual).strip()
+      df.loc[idx, "HORA SALIDA"] = str(h_salida_manual).strip()
 
-        guardar_en_gsheets(df)
-        st.success(f"¡Salida del folio {folio_sel} completada con éxito!")
-        st.rerun()
+      guardar_en_gsheets(df)
+      st.success(f"¡Salida del folio {folio_sel} completada con éxito!")
+      st.rerun()
 
 # Visualizador rápido
 with st.expander("Ver base de datos actual en Google Sheets"):
