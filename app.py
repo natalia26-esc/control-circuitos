@@ -47,10 +47,11 @@ except Exception as e:
 
 df.fillna("", inplace=True)
 
-# Listas oficiales actualizadas
+# Listas oficiales actualizadas (con opción vacía al inicio)
 PLAZAS = ["MÉRIDA", "CANCÚN", "VILLAHERMOSA", "VERACRUZ", "TOLUCA", "TUXTLA"]
 
 OPERADORES_OFICIALES = [
+    "",
     "RAUL ADEMAR ESTRELLA POOT",
     "JORGE IVAN BRITO COUOH",
     "ALEXIS OMAR DZIB DZIB",
@@ -112,13 +113,13 @@ OPERADORES_OFICIALES = [
 ]
 
 UNIDADES_ECONOMICAS = [
+    "",
     "541",
     "447",
     "527",
     "479",
     "506",
     "542",
-    "371",
     "486",
     "435",
     "534",
@@ -245,6 +246,8 @@ if menu == "Registrar Salida":
     if submitted:
       if not folio:
         st.error("Por favor completa el folio.")
+      elif not operador or not no_eco:
+        st.error("Por favor selecciona un operador y un número económico.")
       else:
         if (
             not df.empty
@@ -358,11 +361,13 @@ elif menu == "Llegada sin Salida":
     if submitted_directo:
       if not folio:
         st.error("Por favor completa el folio.")
+      elif not operador or not no_eco:
+        st.error("Por favor selecciona un operador y un número económico.")
       else:
         nueva_fila = {
             "ORIGEN": origen,
-            "FECHA SALIDA": "",  # Vacío para que el origen lo complete luego
-            "HORA SALIDA": "",  # Vacío para que el origen lo complete luego
+            "FECHA SALIDA": "",
+            "HORA SALIDA": "",
             "CIRCUITO": circuito,
             "OPERADOR": operador,
             "NO. ECO": str(no_eco),
@@ -429,6 +434,7 @@ elif menu == "Salida con Llegada previa":
 
       if submitted_completo:
         idx = df[df["FOLIO"].astype(str) == folio_sel].index[0]
+        # AQUÍ ESTABA EL CAMBIO CLAVE: Tomar las variables manuales en lugar de la hora actual del servidor
         df.loc[idx, "FECHA SALIDA"] = f_salida_manual
         df.loc[idx, "HORA SALIDA"] = h_salida_manual
 
