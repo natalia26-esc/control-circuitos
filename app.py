@@ -47,8 +47,17 @@ except Exception as e:
 
 df.fillna("", inplace=True)
 
-# Listas oficiales actualizadas (con opción vacía al inicio)
-PLAZAS = ["MÉRIDA", "CANCÚN", "VILLAHERMOSA", "VERACRUZ", "TOLUCA", "TUXTLA"]
+# Listas oficiales actualizadas con las nuevas plazas
+PLAZAS = [
+    "MÉRIDA",
+    "CANCÚN",
+    "VILLAHERMOSA",
+    "VERACRUZ",
+    "TOLUCA",
+    "TUXTLA",
+    "COATZACOALCOS",
+    "CIUDAD DEL CARMEN",
+]
 
 OPERADORES_OFICIALES = [
     "",
@@ -427,7 +436,6 @@ elif menu == "Salida con Llegada previa":
     f_hoy, h_ahora = obtener_tiempo_mexico()
     st.markdown("#### Ingresa únicamente la Fecha y Hora de tu Salida:")
 
-    # Usamos campos de texto fuera del form para asegurar que lean exactamente el input manual
     f_salida_manual = st.text_input("Fecha de Salida (DD/MM/AAAA)", value=f_hoy)
     h_salida_manual = st.text_input(
         "Hora de Salida (HH:MM:SS)", value=h_ahora, key="input_hora_salida"
