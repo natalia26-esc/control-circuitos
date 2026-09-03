@@ -129,13 +129,12 @@ UNIDADES_ECONOMICAS = [
     "479",
     "506",
     "542",
-    "371",
+    "381",
     "486",
     "435",
     "534",
     "539",
     "504",
-    "381", 
     "538",
     "522",
     "480",
@@ -198,6 +197,44 @@ UNIDADES_ECONOMICAS = [
 st.title("Control de Circuitos entre Plazas (En Línea)")
 
 plaza_actual = st.selectbox("Selecciona tu Plaza Actual:", PLAZAS)
+
+# ---------------------------------------------------------
+# PANEL DE NOTIFICACIONES Y RECORDATORIOS EN TIEMPO REAL
+# ---------------------------------------------------------
+if not df.empty:
+  # 1. Checar llegadas pendientes para esta plaza (donde es destino y no hay fecha de llegada)
+  pend_llegada = df[
+      (df["DESTINO"] == plaza_actual)
+      & (
+          df["FECHA LLEGADA DESTINO FINAL"].isna()
+          | (df["FECHA LLEGADA DESTINO FINAL"] == "")
+      )
+  ]
+
+  # 2. Checar salidas pendientes para esta plaza (donde es origen, el destino ya marcó llegada, pero falta la salida)
+  pend_salida = df[
+      (df["ORIGEN"] == plaza_actual)
+      & (df["FECHA SALIDA"].isna() | (df["FECHA SALIDA"] == ""))
+  ]
+
+  if not pend_llegada.empty or not pend_salida.empty:
+    with st.expander(
+        f"🔔 Notificaciones y Pendientes para {plaza_actual}", expanded=True
+    ):
+      if not pend_llegada.empty:
+        st.warning(
+            f"📥 Tienes **{len(pend_llegada)} circuito(s) pendientes de"
+            " registrar llegada** en tu plaza. Ve al apartado de 'Registrar"
+            " Llegada'."
+        )
+      if not pend_salida.empty:
+        st.error(
+            f"⚠️ ¡Atención! Tienes **{len(pend_salida)} circuito(s)** donde el"
+            " destino ya registró la llegada pero **falta tu fecha/hora de"
+            " salida**. Ve al apartado de 'Salida con Llegada previa' para"
+            " completarlos."
+        )
+
 st.markdown("---")
 
 # MENÚ FIJO CON BOTONES
@@ -236,6 +273,10 @@ def guardar_en_gsheets(dataframe):
 # 1. REGISTRAR SALIDA
 if menu == "Registrar Salida":
   st.header(f"Registrar Salida desde: {plaza_actual}")
+  st.info(
+      "💡 **Recordatorio:** Registra la salida exactamente al momento en que"
+      " la unidad abandone el andén. La fecha y hora se generan en automático."
+  )
 
   with st.form("form_salida"):
     fecha_salida, hora_salida = obtener_tiempo_mexico()
@@ -290,6 +331,10 @@ if menu == "Registrar Salida":
 # 2. REGISTRAR LLEGADA (PENDIENTES)
 elif menu == "Registrar Llegada":
   st.header(f"Registrar Llegada en: {plaza_actual}")
+  st.info(
+      "💡 **Recordatorio:** Selecciona de la lista el circuito que acaba de"
+      " arribar a tus instalaciones para darle cierre."
+  )
 
   if df.empty:
     pendientes = pd.DataFrame()
@@ -343,6 +388,12 @@ elif menu == "Registrar Llegada":
 # 3. CAPTURAR LLEGADA SIN SALIDA PREVIA
 elif menu == "Llegada sin Salida":
   st.header(f"Registro Directo (Sin Salida Previa) en: {plaza_actual}")
+  st.warning(
+      "⚠️ **Aviso:** Utiliza esta opción únicamente si la unidad llegó a tu"
+      " plaza pero el origen no alcanzó a registrar su salida. Esto guardará"
+      " tu llegada y dejará el registro pendiente para que el origen lo"
+      " complete."
+  )
 
   with st.form("form_directo"):
     origen = st.selectbox(
@@ -350,10 +401,6 @@ elif menu == "Llegada sin Salida":
     )
 
     f_ahora, h_ahora = obtener_tiempo_mexico()
-    st.markdown(
-        "*Nota: La fecha y hora de salida se dejarán vacías para que el origen"
-        " las complemente después.*"
-    )
     st.write(f"**Fecha de Llegada (Automática):** {f_ahora}")
     st.write(f"**Hora de Llegada (Automática):** {h_ahora}")
 
@@ -401,6 +448,11 @@ elif menu == "Salida con Llegada previa":
   st.header(
       f"Completar Salida (Destino ya registró llegada) - Plaza: {plaza_actual}"
   )
+  st.info(
+      "💡 **Recordatorio:** Aquí aparecen los circuitos que tu plaza envió, el"
+      " destino ya les dio entrada, y necesitas ingresar la fecha y hora real"
+      " de tu salida."
+  )
 
   if df.empty:
     pendientes_salida = pd.DataFrame()
@@ -411,9 +463,9 @@ elif menu == "Salida con Llegada previa":
     ]
 
   if pendientes_salida.empty:
-    st.info(
-        "No hay salidas pendientes de complementar para tu plaza (o el destino"
-        " aún no registra la llegada)."
+    st.success(
+        "✅ ¡Excelente! No hay salidas pendientes de complementar para tu"
+        " plaza."
     )
   else:
     st.write(
