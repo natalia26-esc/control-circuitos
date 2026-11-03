@@ -197,6 +197,7 @@ UNIDADES_ECONOMICAS = [
     "490",
     "481",
     "512",
+    "547"
     "Externo:131365",
     "Externo:131363",
     "528",
