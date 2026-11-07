@@ -196,12 +196,12 @@ if modo == "Iniciar Nuevo Viaje":
           " uno nuevo."
       )
     else:
-      # Formulario inicial
+      # SACAMOS EL TIPO DE CIRCUITO FUERA DEL FORM PARA QUE ACTUALICE EN TIEMPO REAL
+      tipo_circuito = st.radio(
+          "Selecciona el tipo de circuito:", ["Directo", "Enlace"]
+      )
+      
       with st.form("form_inicio", clear_on_submit=True):
-        tipo_circuito = st.radio(
-            "Selecciona el tipo de circuito:", ["Directo", "Enlace"]
-        )
-
         f_salida, h_salida = obtener_tiempo_mexico()
 
         if tipo_circuito == "Directo":
@@ -251,7 +251,6 @@ if modo == "Iniciar Nuevo Viaje":
               "✅ ¡GUARDADO EXITOSO! Salida del circuito registrada"
               " correctamente en la base de datos."
           )
-
 
 # ---------------------------------------------------------
 # OPCIÓN B: SEGUIMIENTO Y CIERRE DE PENDIENTES
@@ -309,11 +308,10 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
         with st.form("form_cierre_directo", clear_on_submit=True):
             obs_destino_dir = st.text_area(
                 "Observaciones / Percances en el trayecto (Destino Final)",
-                value="" # Iniciamos vacío
+                value="" 
             )
 
             if st.form_submit_button("Cerrar Circuito Directo"):
-                # Recuperar observación existente y anexar la nueva si la hay
                 obs_previa = str(viaje_info.get("OBSERVACIONES DESTINO", ""))
                 nueva_obs = f"{obs_previa} | {obs_destino_dir}".strip(" |") if obs_destino_dir else obs_previa
 
@@ -325,9 +323,8 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
                     "✅ ¡GUARDADO EXITOSO! Circuito directo cerrado y guardado"
                     " correctamente."
                 )
-                
 
-      # CASO 2: CIRCUITO ENLACE (Fases guiadas automáticas)
+      # CASO 2: CIRCUITO ENLACE
       else:
         llego_intermedia = (
             str(viaje_info["FECHA LLEGADA INTERMEDIA"]).strip() != ""
@@ -347,7 +344,7 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
           with st.form("form_llegada_escala", clear_on_submit=True):
               obs_escala = st.text_area(
                   f"Observaciones al llegar a la escala ({viaje_info['PLAZA INTERMEDIA']})",
-                  value="" # Vacío por defecto
+                  value="" 
               )
 
               if st.form_submit_button("Guardar Llegada a Escala"):
@@ -359,7 +356,6 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
                     f"✅ ¡GUARDADO EXITOSO! Llegada a"
                     f" {viaje_info['PLAZA INTERMEDIA']} registrada."
                 )
-                
 
         else:
           salio_intermedia = (
@@ -388,14 +384,12 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
             )
 
             with st.form("form_salida_escala", clear_on_submit=True):
-                # El cuadro de texto ahora está completamente vacío para evitar arrastrar la nota anterior
                 obs_salida_escala = st.text_area(
                     "Observaciones al reanudar la marcha desde la escala",
                     value="" 
                 )
 
                 if st.form_submit_button("Guardar Salida de Escala"):
-                  # Anexar a la observación existente si escriben algo nuevo
                   obs_previa = str(viaje_info.get("OBSERVACIONES ESCALA", ""))
                   nueva_obs = f"{obs_previa} | Salida: {obs_salida_escala}" if obs_salida_escala else obs_previa
                   
@@ -404,7 +398,6 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
                   df.loc[idx_viaje, "OBSERVACIONES ESCALA"] = nueva_obs
                   guardar_en_gsheets(df)
                   st.success("✅ ¡GUARDADO EXITOSO! Salida de escala registrada.")
-                  
 
           else:
             st.markdown(
@@ -425,7 +418,7 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
             with st.form("form_cierre_enlace", clear_on_submit=True):
                 obs_destino_enlace = st.text_area(
                     "Observaciones / Percances al llegar al Destino Final",
-                    value="" # Vacío por defecto
+                    value="" 
                 )
 
                 if st.form_submit_button("Cerrar Viaje en Destino Final"):
@@ -437,7 +430,6 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
                       "✅ ¡GUARDADO EXITOSO! El circuito de enlace ha sido"
                       " cerrado por completo."
                   )
-                  
 
 # ---------------------------------------------------------
 # DESCARGA DE DATOS (GOOGLE SHEETS MAESTRA)
