@@ -65,13 +65,13 @@ OPERADORES_OFICIALES = [
 
 # Unidades económicas y su serie de chasis
 UNIDADES_ECONOMICAS = [
-    "", "388 (Chasis: 3WKAD40X8JF872041)", "471 (Chasis: 3WKYD40X9LF511290)",
-    "472 (Chasis: 3WKYD40X0LF511291)", "503 (Chasis: 3WKZDP0XXLF516052)",
-    "540 (Chasis: 3WKYD40X3TF500818)", "543 (Chasis: 3WKYD40X6TF502708)",
-    "470 (Chasis: 3WKZD40X1LF513555)", "530 (Chasis: 3WKYDP0X1SF554750)",
-    "539 (Chasis: 3BK5LJ9X6TF403172)", "508 (Chasis: 3HAEVMMR6PL162411)",
-    "412 (Chasis: 3BKHKN9X6KF316880)", "435 (Chasis: 3BKHKN9X2KF317783)",
-    "538 (Chasis: 3BKHKN9X4TF403171)",
+    "", "388 (Chasis: 3WKAD40X8JF872041)", "471",
+    "472", "503",
+    "540", "543",
+    "470", "530",
+    "539", "508",
+    "412", "435",
+    "538",
 ]
 
 st.title("Control de Circuitos - Portal del Operador")
