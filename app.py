@@ -65,7 +65,7 @@ OPERADORES_OFICIALES = [
 
 # Unidades económicas y su serie de chasis
 UNIDADES_ECONOMICAS = [
-    "", "388 (Chasis: 3WKAD40X8JF872041)", "471",
+    "", "388", "471",
     "472", "503",
     "540", "543",
     "470", "530",
