@@ -52,7 +52,7 @@ except Exception as e:
 
 df.fillna("", inplace=True)
 
-# Listas oficiales actualizadas
+# Listas oficiales de Plazas
 PLAZAS = [
     "MÉRIDA",
     "CANCÚN",
@@ -64,139 +64,43 @@ PLAZAS = [
     "CIUDAD DEL CARMEN",
 ]
 
+# Listas oficiales actualizadas (Nombre y Puesto)[cite: 7]
 OPERADORES_OFICIALES = [
     "",
-    "RAUL ADEMAR ESTRELLA POOT",
-    "JORGE IVAN BRITO COUOH",
-    "ALEXIS OMAR DZIB DZIB",
-    "RIGOBERTO DZIB OXTE",
-    "SANTIAGO GIOBERTI CRUZ CANO",
-    "CARLOS HERNANDEZ FERNANDEZ",
-    "FRANCISCO JOSE DOMINGUEZ GOMEZ",
-    "JORGE FABIAN ORTIZ LOPEZ",
-    "ALEJANDRO RAMIREZ HERRERA",
-    "JOSE ANGEL RAMIREZ JIMENEZ",
-    "DEINER EFRAIN FRIAS CARDONA",
-    "JOSE MANUEL SALAZAR SALCIDO",
-    "EDUARDO HERNANDEZ HERNANDEZ",
-    "LEON LUIS FERNANDO CENTENO DE",
-    "RODOLFO JULIAN MALDONADO AGUILAR",
-    "JUSTINO VARGAS GUILLEN",
-    "EBER JOSHUAN SOLIS ALVARADO",
-    "RODIBERTO VIDAL RIVERA",
-    "GASPAR SOLIS JAIME",
-    "ROGELIO GAEL MARTIN CIME",
-    "CRISTHIAN DANIEL DE JESUS EK BAUTISTA",
-    "GLEINER RAMSES RODRIGUEZ CHAN",
-    "IRVING ALEJANDRO CANTO CHAN",
-    "JAVIER EDUARDO FRANCO DZUL",
-    "JORGE BERNABE MOGUEL CORREA",
-    "ARMIN GUADALUPE DZUL ROSALES",
-    "OSCAR RENE GOMEZ PAT",
-    "HENRY HAFID CANUL AKE",
-    "JOSE SEBASTIAN KU KU",
-    "RICARDO EMMANUEL LIZAMA ALBORNOZ",
-    "LUIS ENRIQUE LORIA CAMPOS",
-    "JARED ARZATE BUENROSTRO",
-    "SERAFIN GONZALES VERTIZ",
-    "EDUARDO TZAB GONZALEZ",
-    "DAVID MORALES BAJE",
-    "ROMERO JESUS HORACIO DE LEON",
-    "RUBEN MAGAÑA RAMIREZ",
-    "RAFAEL SANCHEZ MARTINEZ",
-    "IVAN GARCIA SANCHEZ",
-    "JOSE ANTONIO PORCAYO ALMANZAR",
-    "RODRIGO MORALES BECERRIL",
-    "GELASIO ALBERTO GUADARRAMA GUADARRAMA",
-    "LUIS ENRIQUE CORZO CAMILO",
-    "AZIEL ACERO COELLO",
-    "JORGE VELAZQUEZ MEJIA",
-    "ALBERTO GABRIEL ORTIZ CHACON",
-    "OSCAR GONZALEZ HERNANDEZ",
-    "ANGEL DAVID RIVERA CORTES",
-    "FREDY VILLEGAS ALEJANDRO",
-    "LUIS EDUARDO MARTINEZ MENDEZ",
-    "OTILIO MENDEZ ESCOBAR",
-    "CARLOS ALFREDO DIAZ COYADO",
-    "LUIS ANGEL ARROYO PECH",
-    "ARMIN NEFTALI CARRILLO SANCHEZ",
-    "CARLOS IGNACIO CASTILLO CORDERO",
-    "ALEJANDRO GUADARRAMA GONZALEZ",
-    "NOE SALDIVAR FLORES",
-    "MOISES FERNANDEZ ESTRADA",
+    "Jose Angel Ramirez Jimenez - OPERADOR TORTON",
+    "Jorge Fabian Ortiz Lopez - OPERADOR SENCILLO",
+    "Ruben Magaña Ramirez - OPERADOR FULL",
+    "Rodiberto Vidal Rivera - OPERADOR FULL",
+    "Francisco Jose Dominguez Gomez - OPERADOR TORTON",
+    "Alejandro Ramirez Herrera - OPERADOR FULL",
+    "Jose Antonio Porcayo - OPERADOR SENCILLO",
+    "Jose Antonio Porcayo Almanzar - OPERADOR SENCILLO",
+    "Jesus Horacio de Leon Romero - OPERADOR FULL",
+    "Jose Manuel Salazar Salcido - OPERADOR TORTON",
+    "Mario Garcia Sanchez - OPERADOR FULL",
+    "Zair Diego Campos Mares - OPERADOR FULL",
+    "Rodrigo Navarro Hernandez - OPERADOR FULL",
+    "Carlos Martinez Hernandez - OPERADOR FULL",
+    "Gabriel Poxtan Temix - OPERADOR FULL",
+    "Alejandro Guadarrama Zamora - OPERADOR SENCILLO",
 ]
 
+# Unidades económicas y su serie de chasis[cite: 8]
 UNIDADES_ECONOMICAS = [
     "",
-    "541",
-    "447",
-    "527",
-    "479",
-    "506",
-    "542",
-    "371",
-    "486",
-    "435",
-    "534",
-    "539",
-    "504",
-    "538",
-    "522",
-    "480",
-    "441",
-    "524",
-    "535",
-    "230",
-    "540",
-    "419",
-    "440",
-    "453",
-    "536",
-    "378",
-    "1250",
-    "401",
-    "525",
-    "418",
-    "510",
-    "420",
-    "509",
-    "508",
-    "408",
-    "498",
-    "423",
-    "537",
-    "482",
-    "513",
-    "500",
-    "543",
-    "470",
-    "503",
-    "530",
-    "471",
-    "466",
-    "505",
-    "488",
-    "489",
-    "429",
-    "373",
-    "499",
-    "399",
-    "386",
-    "477",
-    "415",
-    "388",
-    "517",
-    "514",
-    "451",
-    "458",
-    "472",
-    "476",
-    "515",
-    "507",
-    "412",
-    "490",
-    "512",
-    "528",
+    "388 (Chasis: 3WKAD40X8JF872041)",
+    "471 (Chasis: 3WKYD40X9LF511290)",
+    "472 (Chasis: 3WKYD40X0LF511291)",
+    "503 (Chasis: 3WKZDP0XXLF516052)",
+    "540 (Chasis: 3WKYD40X3TF500818)",
+    "543 (Chasis: 3WKYD40X6TF502708)",
+    "470 (Chasis: 3WKZD40X1LF513555)",
+    "530 (Chasis: 3WKYDP0X1SF554750)",
+    "539 (Chasis: 3BK5LJ9X6TF403172)",
+    "508 (Chasis: 3HAEVMMR6PL162411)",
+    "412 (Chasis: 3BKHKN9X6KF316880)",
+    "435 (Chasis: 3BKHKN9X2KF317783)",
+    "538 (Chasis: 3BKHKN9X4TF403171)",
 ]
 
 st.title("Control de Circuitos - Portal del Operador")
@@ -205,11 +109,11 @@ st.title("Control de Circuitos - Portal del Operador")
 col_id1, col_id2 = st.columns(2)
 with col_id1:
   operador_actual = st.selectbox(
-      "Selecciona tu Nombre (Operador):", OPERADORES_OFICIALES
+      "Selecciona tu Nombre y Puesto:", OPERADORES_OFICIALES
   )
 with col_id2:
   unidad_actual = st.selectbox(
-      "Selecciona tu Unidad (No. Económico):", UNIDADES_ECONOMICAS
+      "Selecciona tu Unidad y Chasis:", UNIDADES_ECONOMICAS
   )
 
 st.markdown("---")
@@ -393,8 +297,6 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
           f" {viaje_info['HORA SALIDA ORIGEN']}"
       )
 
-      f_now, h_now = obtener_tiempo_mexico()
-
       # FORMULARIO SEGÚN EL TIPO DE CIRCUITO
       with st.form("form_seguimiento"):
         observaciones = st.text_area(
@@ -404,6 +306,7 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
 
         # CASO 1: CIRCUITO DIRECTO (Solo requiere marcar llegada final)
         if tipo_c == "Directo":
+          f_now, h_now = obtener_tiempo_mexico()
           st.markdown("#### Registrar Llegada a Destino")
           st.write(f"**Fecha de Llegada (Automática):** {f_now}")
           st.write(f"**Hora de Llegada (Automática):** {h_now}")
@@ -421,56 +324,112 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
             )
             st.rerun()
 
-        # CASO 2: CIRCUITO ENLACE (Tiene etapas intermedias)
+        # CASO 2: CIRCUITO ENLACE (Dividido en 3 pasos reales y separados)
         else:
-          etapa_actual = st.radio(
-              "¿Qué etapa deseas registrar?",
-              [
-                  "1. Registrar paso por Plaza Intermedia (Escala)",
-                  "2. Registrar Llegada a Destino Final (Cerrar Viaje)",
-              ],
+          # Determinamos automáticamente en qué paso va el viaje
+          llego_intermedia = (
+              str(viaje_info["FECHA LLEGADA INTERMEDIA"]).strip() != ""
           )
 
-          if "1." in etapa_actual:
+          if not llego_intermedia:
+            # PASO A: El operador apenas llegó a la escala
             st.markdown(
-                f"#### Registro en Plaza Intermedia:"
+                f"#### 📍 Paso 1: Registrar LLEGADA a Plaza Intermedia:"
                 f" {viaje_info['PLAZA INTERMEDIA']}"
             )
-            registrar_escala = st.form_submit_button(
-                "Guardar Llegada y Salida de Escala"
+            f_lleg_int, h_lleg_int = obtener_tiempo_mexico()
+            st.write(
+                f"**Fecha y Hora de Arribo a Escala (Automática):**"
+                f" {f_lleg_int} - {h_lleg_int}"
             )
 
-            if registrar_escala:
+            btn_llegada_escala = st.form_submit_button(
+                "Guardar Llegada a Escala"
+            )
+
+            if btn_llegada_escala:
               idx = df[df["FOLIO"].astype(str) == folio_elegido].index[0]
-              df.loc[idx, "FECHA LLEGADA INTERMEDIA"] = f_now
-              df.loc[idx, "HORA LLEGADA INTERMEDIA"] = h_now
-              df.loc[idx, "FECHA SALIDA INTERMEDIA"] = f_now
-              df.loc[idx, "HORA SALIDA INTERMEDIA"] = h_now
+              df.loc[idx, "FECHA LLEGADA INTERMEDIA"] = f_lleg_int
+              df.loc[idx, "HORA LLEGADA INTERMEDIA"] = h_lleg_int
               df.loc[idx, "OBSERVACIONES / PERCANCES"] = observaciones
               guardar_en_gsheets(df)
               st.success(
-                  f"¡Paso por plaza intermedia registrado para el folio"
-                  f" {folio_elegido}!"
+                  f"¡Llegada a {viaje_info['PLAZA INTERMEDIA']} registrada con"
+                  " éxito! (Ahora podrás marcar tu salida de la escala cuando"
+                  " retomes el viaje)."
               )
               st.rerun()
+
           else:
-            st.markdown(
-                f"#### Cierre de Viaje en Destino Final:"
-                f" {viaje_info['DESTINO']}"
+            # PASO B: Ya llegó a la escala, ahora registra su SALIDA de la escala y avanza al destino final
+            salio_intermedia = (
+                str(viaje_info["FECHA SALIDA INTERMEDIA"]).strip() != ""
             )
-            cerrar_enlace = st.form_submit_button("Cerrar Circuito por Enlace")
 
-            if cerrar_enlace:
-              idx = df[df["FOLIO"].astype(str) == folio_elegido].index[0]
-              df.loc[idx, "FECHA LLEGADA DESTINO"] = f_now
-              df.loc[idx, "HORA LLEGADA DESTINO"] = h_now
-              df.loc[idx, "OBSERVACIONES / PERCANCES"] = observaciones
-              guardar_en_gsheets(df)
-              st.success(
-                  f"¡El circuito en enlace {folio_elegido} ha sido cerrado"
-                  " exitosamente!"
+            st.markdown(
+                f"✅ **Llegada a Escala ya registrada:**"
+                f" {viaje_info['FECHA LLEGADA INTERMEDIA']} a las"
+                f" {viaje_info['HORA LLEGADA INTERMEDIA']}"
+            )
+
+            if not salio_intermedia:
+              st.markdown(
+                  f"#### 🚀 Paso 2: Registrar SALIDA de Plaza Intermedia:"
+                  f" {viaje_info['PLAZA INTERMEDIA']}"
               )
-              st.rerun()
+              f_sal_int, h_sal_int = obtener_tiempo_mexico()
+              st.write(
+                  f"**Fecha y Hora de Salida de Escala (Automática):**"
+                  f" {f_sal_int} - {h_sal_int}"
+              )
+
+              btn_salida_escala = st.form_submit_button(
+                  "Guardar Salida de Escala"
+              )
+
+              if btn_salida_escala:
+                idx = df[df["FOLIO"].astype(str) == folio_elegido].index[0]
+                df.loc[idx, "FECHA SALIDA INTERMEDIA"] = f_sal_int
+                df.loc[idx, "HORA SALIDA INTERMEDIA"] = h_sal_int
+                df.loc[idx, "OBSERVACIONES / PERCANCES"] = observaciones
+                guardar_en_gsheets(df)
+                st.success(
+                    "¡Salida de escala registrada! El viaje ha continuado hacia"
+                    " el destino final."
+                )
+                st.rerun()
+
+            else:
+              st.markdown(
+                  f"✅ **Salida de Escala ya registrada:**"
+                  f" {viaje_info['FECHA SALIDA INTERMEDIA']} a las"
+                  f" {viaje_info['HORA SALIDA INTERMEDIA']}"
+              )
+              st.markdown(
+                  f"#### 🏁 Paso 3: Registrar LLEGADA al Destino Final:"
+                  f" {viaje_info['DESTINO']}"
+              )
+              f_lleg_fin, h_lleg_fin = obtener_tiempo_mexico()
+              st.write(
+                  f"**Fecha y Hora de Llegada a Destino Final (Automática):**"
+                  f" {f_lleg_fin} - {h_lleg_fin}"
+              )
+
+              btn_cierre_final = st.form_submit_button(
+                  "Cerrar Viaje en Destino Final"
+              )
+
+              if btn_cierre_final:
+                idx = df[df["FOLIO"].astype(str) == folio_elegido].index[0]
+                df.loc[idx, "FECHA LLEGADA DESTINO"] = f_lleg_fin
+                df.loc[idx, "HORA LLEGADA DESTINO"] = h_lleg_fin
+                df.loc[idx, "OBSERVACIONES / PERCANCES"] = observaciones
+                guardar_en_gsheets(df)
+                st.success(
+                    f"¡El circuito en enlace {folio_elegido} ha sido cerrado"
+                    " por completo y con éxito!"
+                )
+                st.rerun()
 
 # ---------------------------------------------------------
 # DESCARGA DE DATOS (GOOGLE SHEETS MAESTRA)
