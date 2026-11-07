@@ -32,7 +32,6 @@ try:
         "ORIGEN",
         "PLAZA INTERMEDIA",
         "DESTINO",
-        "FOLIO",
         "FECHA SALIDA ORIGEN",
         "HORA SALIDA ORIGEN",
         "FECHA LLEGADA INTERMEDIA",
@@ -64,7 +63,7 @@ PLAZAS = [
     "CIUDAD DEL CARMEN",
 ]
 
-# Listas oficiales actualizadas (Nombre y Puesto)[cite: 7]
+# Listas oficiales (Nombre y Puesto)
 OPERADORES_OFICIALES = [
     "",
     "Jose Angel Ramirez Jimenez - OPERADOR TORTON",
@@ -85,7 +84,7 @@ OPERADORES_OFICIALES = [
     "Alejandro Guadarrama Zamora - OPERADOR SENCILLO",
 ]
 
-# Unidades económicas y su serie de chasis[cite: 8]
+# Unidades económicas y su serie de chasis
 UNIDADES_ECONOMICAS = [
     "",
     "388 (Chasis: 3WKAD40X8JF872041)",
@@ -143,8 +142,8 @@ if operador_actual:
     ]
     if not mis_pendientes.empty:
       st.warning(
-          f"⚠️ Tienes **{len(mis_pendientes)} viaje(s) pendiente(s)** de"
-          " completar o cerrar. Revisa la sección de seguimiento abajo."
+          f"⚠️ Tienes **{len(mis_pendientes)} viaje(s) en curso** pendiente(s)"
+          " de cerrar. Ve a la sección de seguimiento."
       )
 
 # Botones de navegación principales
@@ -177,82 +176,90 @@ if modo == "Iniciar Nuevo Viaje":
         " superior."
     )
   else:
-    tipo_circuito = st.radio(
-        "Selecciona el tipo de circuito:", ["Directo", "Enlace"]
+    # Validar si ya tiene un viaje abierto antes de dejarlo iniciar otro
+    viaje_abierto = (
+        False
+        if df.empty
+        else not df[
+            (df["OPERADOR"] == operador_actual)
+            & (
+                (df["FECHA LLEGADA DESTINO"] == "")
+                | (df["FECHA LLEGADA DESTINO"].isna())
+            )
+        ].empty
     )
 
-    with st.form("form_nuevo_viaje"):
-      f_salida, h_salida = obtener_tiempo_mexico()
+    if viaje_abierto:
+      st.error(
+          "⛔ Ya tienes un viaje en curso sin cerrar. Debes concluirlo en la"
+          " sección de 'Dar Seguimiento / Cerrar Pendientes' antes de iniciar"
+          " uno nuevo."
+      )
+    else:
+      tipo_circuito = st.radio(
+          "Selecciona el tipo de circuito:", ["Directo", "Enlace"]
+      )
 
-      if tipo_circuito == "Directo":
-        st.subheader("Ruta Directa")
-        origen = st.selectbox("Origen", PLAZAS)
-        destino = st.selectbox(
-            "Destino", [p for p in PLAZAS if p != origen]
-        )
-        plaza_intermedia = ""
+      with st.form("form_nuevo_viaje", clear_on_submit=True):
+        f_salida, h_salida = obtener_tiempo_mexico()
 
-      else:  # Enlace / Escalas
-        st.subheader("Ruta con Enlace (Escala)")
-        origen = st.selectbox("Origen", PLAZAS)
-        plaza_intermedia = st.selectbox(
-            "Plaza Intermedia (Escala)", [p for p in PLAZAS if p != origen]
-        )
-        destino = st.selectbox(
-            "Destino Final",
-            [p for p in PLAZAS if p != origen and p != plaza_intermedia],
-        )
+        if tipo_circuito == "Directo":
+          st.subheader("Ruta Directa")
+          origen = st.selectbox("Origen", PLAZAS)
+          destino = st.selectbox(
+              "Destino", [p for p in PLAZAS if p != origen]
+          )
+          plaza_intermedia = ""
 
-      folio = st.text_input("Folio del Circuito (Ej: DQ00032584)")
+        else:  # Enlace / Escalas
+          st.subheader("Ruta con Enlace (Escala)")
+          origen = st.selectbox("Origen", PLAZAS)
+          plaza_intermedia = st.selectbox(
+              "Plaza Intermedia (Escala)", [p for p in PLAZAS if p != origen]
+          )
+          destino = st.selectbox(
+              "Destino Final",
+              [p for p in PLAZAS if p != origen and p != plaza_intermedia],
+          )
 
-      st.write(f"**Fecha de Salida (Automática):** {f_salida}")
-      st.write(f"**Hora de Salida (Automática):** {h_salida}")
+        st.write(f"**Fecha de Salida (Automática):** {f_salida}")
+        st.write(f"**Hora de Salida (Automática):** {h_salida}")
 
-      submitted_viaje = st.form_submit_button("Registrar Salida de Origen")
+        submitted_viaje = st.form_submit_button("Registrar Salida de Origen")
 
-      if submitted_viaje:
-        if not folio:
-          st.error("Por favor ingresa el folio del circuito.")
-        else:
-          if (
-              not df.empty
-              and not df[df["FOLIO"].astype(str) == str(folio)].empty
-          ):
-            st.error("¡El folio ya se encuentra registrado en el sistema!")
-          else:
-            nueva_fila = {
-                "OPERADOR": operador_actual,
-                "NO. ECO": str(unidad_actual),
-                "TIPO": tipo_circuito,
-                "ORIGEN": origen,
-                "PLAZA INTERMEDIA": plaza_intermedia,
-                "DESTINO": destino,
-                "FOLIO": str(folio),
-                "FECHA SALIDA ORIGEN": f_salida,
-                "HORA SALIDA ORIGEN": h_salida,
-                "FECHA LLEGADA INTERMEDIA": "",
-                "HORA LLEGADA INTERMEDIA": "",
-                "FECHA SALIDA INTERMEDIA": "",
-                "HORA SALIDA INTERMEDIA": "",
-                "FECHA LLEGADA DESTINO": "",
-                "HORA LLEGADA DESTINO": "",
-                "OBSERVACIONES / PERCANCES": "",
-            }
-            df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
-            guardar_en_gsheets(df)
-            st.success(
-                f"¡Salida del circuito registrada con éxito! Folio: {folio}"
-            )
-            st.rerun()
+        if submitted_viaje:
+          nueva_fila = {
+              "OPERADOR": operador_actual,
+              "NO. ECO": str(unidad_actual),
+              "TIPO": tipo_circuito,
+              "ORIGEN": origen,
+              "PLAZA INTERMEDIA": plaza_intermedia,
+              "DESTINO": destino,
+              "FECHA SALIDA ORIGEN": f_salida,
+              "HORA SALIDA ORIGEN": h_salida,
+              "FECHA LLEGADA INTERMEDIA": "",
+              "HORA LLEGADA INTERMEDIA": "",
+              "FECHA SALIDA INTERMEDIA": "",
+              "HORA SALIDA INTERMEDIA": "",
+              "FECHA LLEGADA DESTINO": "",
+              "HORA LLEGADA DESTINO": "",
+              "OBSERVACIONES / PERCANCES": "",
+          }
+          df = pd.concat([df, pd.DataFrame([nueva_fila])], ignore_index=True)
+          guardar_en_gsheets(df)
+          st.success(
+              "✅ ¡GUARDADO EXITOSO! Salida del circuito registrada"
+              " correctamente en la base de datos."
+          )
 
 # ---------------------------------------------------------
-# OPCIÓN B: SEGUIMIENTO Y CIERRE DE PENDIENTES
+# OPCIÓN B: SEGUIMIENTO Y CIERRE DE PENDIENTES (SIN FOLIOS)
 # ---------------------------------------------------------
 elif modo == "Dar Seguimiento / Cerrar Pendientes":
-  st.header("Mis Viajes en Ruta / Pendientes de Cerrar")
+  st.header("Mi Viaje en Ruta / Pendiente de Cerrar")
 
   if not operador_actual:
-    st.warning("Selecciona tu nombre en la parte superior para ver tus viajes.")
+    st.warning("Selecciona tu nombre en la parte superior para ver tu viaje.")
   else:
     if df.empty:
       mis_viajes = pd.DataFrame()
@@ -270,19 +277,14 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
           "✅ ¡No tienes viajes pendientes! Todos tus circuitos están cerrados."
       )
     else:
-      folios_activos = mis_viajes["FOLIO"].astype(str).tolist()
-      folio_elegido = st.selectbox(
-          "Selecciona el Folio que deseas actualizar o cerrar:", folios_activos
-      )
-
-      viaje_info = mis_viajes[
-          mis_viajes["FOLIO"].astype(str) == folio_elegido
-      ].iloc[0]
+      # Tomamos automáticamente el viaje activo del operador
+      viaje_info = mis_viajes.iloc[0]
       tipo_c = viaje_info["TIPO"]
+      idx_viaje = mis_viajes.index[0]
 
       st.markdown("---")
-      st.markdown(f"### Detalle del Viaje (Folio: {folio_elegido})")
-      st.write(f"- **Tipo:** {tipo_c}")
+      st.markdown("### Detalle de tu Viaje Actual")
+      st.write(f"- **Tipo de Circuito:** {tipo_c}")
       st.write(
           f"- **Ruta:** {viaje_info['ORIGEN']} ➡️ "
           + (
@@ -297,14 +299,14 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
           f" {viaje_info['HORA SALIDA ORIGEN']}"
       )
 
-      # FORMULARIO SEGÚN EL TIPO DE CIRCUITO
-      with st.form("form_seguimiento"):
+      # FORMULARIO DE SEGUIMIENTO
+      with st.form("form_seguimiento", clear_on_submit=True):
         observaciones = st.text_area(
             "Observaciones / Percances en el trayecto",
             value=viaje_info["OBSERVACIONES / PERCANCES"],
         )
 
-        # CASO 1: CIRCUITO DIRECTO (Solo requiere marcar llegada final)
+        # CASO 1: CIRCUITO DIRECTO
         if tipo_c == "Directo":
           f_now, h_now = obtener_tiempo_mexico()
           st.markdown("#### Registrar Llegada a Destino")
@@ -314,25 +316,22 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
           cerrar_directo = st.form_submit_button("Cerrar Circuito Directo")
 
           if cerrar_directo:
-            idx = df[df["FOLIO"].astype(str) == folio_elegido].index[0]
-            df.loc[idx, "FECHA LLEGADA DESTINO"] = f_now
-            df.loc[idx, "HORA LLEGADA DESTINO"] = h_now
-            df.loc[idx, "OBSERVACIONES / PERCANCES"] = observaciones
+            df.loc[idx_viaje, "FECHA LLEGADA DESTINO"] = f_now
+            df.loc[idx_viaje, "HORA LLEGADA DESTINO"] = h_now
+            df.loc[idx_viaje, "OBSERVACIONES / PERCANCES"] = observaciones
             guardar_en_gsheets(df)
             st.success(
-                f"¡Circuito {folio_elegido} cerrado y guardado con éxito!"
+                "✅ ¡GUARDADO EXITOSO! Circuito directo cerrado y guardado"
+                " correctamente."
             )
-            st.rerun()
 
-        # CASO 2: CIRCUITO ENLACE (Dividido en 3 pasos reales y separados)
+        # CASO 2: CIRCUITO ENLACE (Fases guiadas automáticas)
         else:
-          # Determinamos automáticamente en qué paso va el viaje
           llego_intermedia = (
               str(viaje_info["FECHA LLEGADA INTERMEDIA"]).strip() != ""
           )
 
           if not llego_intermedia:
-            # PASO A: El operador apenas llegó a la escala
             st.markdown(
                 f"#### 📍 Paso 1: Registrar LLEGADA a Plaza Intermedia:"
                 f" {viaje_info['PLAZA INTERMEDIA']}"
@@ -348,20 +347,16 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
             )
 
             if btn_llegada_escala:
-              idx = df[df["FOLIO"].astype(str) == folio_elegido].index[0]
-              df.loc[idx, "FECHA LLEGADA INTERMEDIA"] = f_lleg_int
-              df.loc[idx, "HORA LLEGADA INTERMEDIA"] = h_lleg_int
-              df.loc[idx, "OBSERVACIONES / PERCANCES"] = observaciones
+              df.loc[idx_viaje, "FECHA LLEGADA INTERMEDIA"] = f_lleg_int
+              df.loc[idx_viaje, "HORA LLEGADA INTERMEDIA"] = h_lleg_int
+              df.loc[idx_viaje, "OBSERVACIONES / PERCANCES"] = observaciones
               guardar_en_gsheets(df)
               st.success(
-                  f"¡Llegada a {viaje_info['PLAZA INTERMEDIA']} registrada con"
-                  " éxito! (Ahora podrás marcar tu salida de la escala cuando"
-                  " retomes el viaje)."
+                  f"✅ ¡GUARDADO EXITOSO! Llegada a"
+                  f" {viaje_info['PLAZA INTERMEDIA']} registrada."
               )
-              st.rerun()
 
           else:
-            # PASO B: Ya llegó a la escala, ahora registra su SALIDA de la escala y avanza al destino final
             salio_intermedia = (
                 str(viaje_info["FECHA SALIDA INTERMEDIA"]).strip() != ""
             )
@@ -388,16 +383,13 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
               )
 
               if btn_salida_escala:
-                idx = df[df["FOLIO"].astype(str) == folio_elegido].index[0]
-                df.loc[idx, "FECHA SALIDA INTERMEDIA"] = f_sal_int
-                df.loc[idx, "HORA SALIDA INTERMEDIA"] = h_sal_int
-                df.loc[idx, "OBSERVACIONES / PERCANCES"] = observaciones
+                df.loc[idx_viaje, "FECHA SALIDA INTERMEDIA"] = f_sal_int
+                df.loc[idx_viaje, "HORA SALIDA INTERMEDIA"] = h_sal_int
+                df.loc[idx_viaje, "OBSERVACIONES / PERCANCES"] = observaciones
                 guardar_en_gsheets(df)
                 st.success(
-                    "¡Salida de escala registrada! El viaje ha continuado hacia"
-                    " el destino final."
+                    "✅ ¡GUARDADO EXITOSO! Salida de escala registrada."
                 )
-                st.rerun()
 
             else:
               st.markdown(
@@ -420,16 +412,14 @@ elif modo == "Dar Seguimiento / Cerrar Pendientes":
               )
 
               if btn_cierre_final:
-                idx = df[df["FOLIO"].astype(str) == folio_elegido].index[0]
-                df.loc[idx, "FECHA LLEGADA DESTINO"] = f_lleg_fin
-                df.loc[idx, "HORA LLEGADA DESTINO"] = h_lleg_fin
-                df.loc[idx, "OBSERVACIONES / PERCANCES"] = observaciones
+                df.loc[idx_viaje, "FECHA LLEGADA DESTINO"] = f_lleg_fin
+                df.loc[idx_viaje, "HORA LLEGADA DESTINO"] = h_lleg_fin
+                df.loc[idx_viaje, "OBSERVACIONES / PERCANCES"] = observaciones
                 guardar_en_gsheets(df)
                 st.success(
-                    f"¡El circuito en enlace {folio_elegido} ha sido cerrado"
-                    " por completo y con éxito!"
+                    "✅ ¡GUARDADO EXITOSO! El circuito de enlace ha sido"
+                    " cerrado por completo."
                 )
-                st.rerun()
 
 # ---------------------------------------------------------
 # DESCARGA DE DATOS (GOOGLE SHEETS MAESTRA)
