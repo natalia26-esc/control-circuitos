@@ -71,7 +71,7 @@ UNIDADES_ECONOMICAS = [
     "470", "530",
     "539", "508",
     "412", "435", "504",
-    "538",
+    "538", "386",
 ]
 
 st.title("Control de Circuitos - Portal del Operador")
